@@ -1,0 +1,22 @@
+# @package _global_
+
+defaults:
+  - probe_triggered_data_collection_for_learning
+
+experiment:
+  config:
+    max_eval_steps: ${constants.num_eval_samples}
+    max_total_steps: 6001
+    plotting_config:
+      enabled: true
+      save_path: ${path.expanduser:${oc.env:MONTY_DATA}/ultrasound_data_collection/plots}
+      plot_frequency: 1
+      plot_patch_features: true
+      show_hypothesis_space: true
+    logging:
+      run_name: probe_triggered_data_collection_for_inference
+    monty_config:
+      monty_args:
+        min_eval_steps: ${constants.num_eval_samples}
+        num_exploratory_steps: 51
+        max_total_steps: 51

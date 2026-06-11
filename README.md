@@ -10,7 +10,7 @@ This codebase is for exploring the application of [Monty](https://github.com/tho
 
 *An example of a model learned by Monty from ultrasound data, as well as the underlying object ❤️*
 
-The majority of this code was produced during the [TBP Robot Hackathon in May 2025](https://thousandbrains.org/2025-05-robot-hackathon/), with further refinements since then. As such, it currently relies on an old version of Monty. There are many ways in which the codebase could be further improved (see [Learn More & Contribute](#learn-more--contribute)), and we are hoping this is something that others take part in!
+The majority of this code was produced during the [TBP Robot Hackathon in May 2025](https://thousandbrains.org/2025-05-robot-hackathon/), with further refinements since then. The repository now uses the latest [tbp.monty](https://github.com/thousandbrainsproject/tbp.monty/) release with [Hydra](https://hydra.cc/docs/intro/) configs. There are many ways in which the codebase could be further improved (see [Learn More & Contribute](#learn-more--contribute)), and we are hoping this is something that others take part in!
 
 # Table of Contents
 
@@ -92,7 +92,7 @@ A side-by-side comparison of dense and sparse data samples is shown in the image
 
 [Download the Sparse Ultrasound Robot Lab dataset from AWS (.zip file)](https://tbp-data-public-5e789bd48e75350c.s3.us-east-2.amazonaws.com/tbp.monty/ultrasound_robot_lab_sparse.zip)
 
-Note that if you inspect the downloaded ultrasound folders, you will notice that their contents are very different from TBP Robot Lab, because the ultrasound datasets consist of `.json` files that store individual ultrasound images paired with position-tracking data. This is thus different from the 3D meshes that underlie many other datasets currently used by Monty (including TBP Robot Lab). This is also why the sequence of observations for the ultrasound objects is fixed, unless you choose to implement a custom dataloader that samples them in an alternative order.
+Note that if you inspect the downloaded ultrasound folders, you will notice that their contents are very different from TBP Robot Lab, because the ultrasound datasets consist of `.json` files that store individual ultrasound images paired with position-tracking data. This is thus different from the 3D meshes that underlie many other datasets currently used by Monty (including TBP Robot Lab). This is also why the sequence of observations for the ultrasound objects is fixed, unless you choose to implement a custom environment interface that samples them in an alternative order.
 
 ### Pre-trained models
 
@@ -124,45 +124,49 @@ Below are results from the key experiments we are interested in - a primary aim 
 
 ## Running Experiments
 
-Experiments are defined in the `configs` directory.
+Experiments are defined as compositional [Hydra](https://hydra.cc/docs/intro/) configs in the `conf/` directory.
 
-After installing the environment and downloading the relevant datasets, you can run an experiment with the following command:
+After installing the environment and downloading the relevant datasets, you can run an experiment with:
 
 ```bash
-python run.py -e <experiment_name>
+python run.py experiment=<experiment_name>
 ```
 
 For example:
 
 To pretrain Monty on simulated versions of the TBP Robot Lab objects:
 ```bash
-python run.py -e surf_agent_1lm_tbp_robot_lab
+python run.py experiment=surf_agent_1lm_tbp_robot_lab
 ```
 
 To pretrain Monty on the dense ultrasound dataset:
 ```bash
-python run.py -e json_dataset_ultrasound_dense_learning
+python run.py experiment=json_dataset_ultrasound_dense_learning
 ```
 
 To run inference on the sparse ultrasound dataset with Monty pretrained on the dense ultrasound dataset:
 
 ```bash
-python run.py -e json_dataset_ultrasound_infer_real2real_dense_learning__sparse_inference
+python run.py experiment=json_dataset_ultrasound_infer_real2real_dense_learning__sparse_inference
 ```
 
 To run inference on the sparse ultrasound dataset with Monty pretrained on the simulated 3D objects:
 
 ```bash
-python run.py -e json_dataset_ultrasound_infer_sim2real__sparse_inference
+python run.py experiment=json_dataset_ultrasound_infer_sim2real__sparse_inference
 ```
 
 For the last benchmark experiment (inference on the *dense* ultrasound dataset with Monty pretrained on the simulated 3D objects), run:
 
 ```bash
-python run.py -e json_dataset_ultrasound_infer_sim2real__dense_inference
+python run.py experiment=json_dataset_ultrasound_infer_sim2real__dense_inference
 ```
 
-Note that the existing experiment configs make use of default values provided in the `tbp_monty_pre_hydra_configs` directory (where Hydra refers to the recent shift in `tbp.monty` to [Hydra](https://hydra.cc/docs/intro/)). Cleaning up configs and updating to use Hydra throughout, without these defaults, is one of the many existing open Issues for this repository (see [Learn More & Contribute](#learn-more--contribute)).
+You can inspect a resolved config without running an experiment:
+
+```bash
+python run.py experiment=json_dataset_ultrasound_dense_learning print_cfg=true
+```
 
 ## Analysis
 
@@ -199,12 +203,12 @@ The basic commands to actually run experiments are below. These are called "prob
 
 For an interactive, live inference experiment (e.g., to evaluate inference during a demo, or to collect data for an inference-focused dataset with only a few samples), run:
 ```bash
-python run.py -e probe_triggered_data_collection_for_inference
+python run.py experiment=probe_triggered_data_collection_for_inference
 ```
 
 To collect a new .json dataset with more samples (e.g. to serve as the training subset for a new dataset), run:
 ```bash
-python run.py -e probe_triggered_data_collection_for_learning
+python run.py experiment=probe_triggered_data_collection_for_learning
 ```
 
 However, before you run these, you will need to setup the iPad app with the ultrasound probe, as well as the Windows PC and associated Vive Tracker to capture the live position of the probe.
@@ -246,7 +250,7 @@ You should also position the tracker puck such that its center, relative to the 
 
 You should see this change reflected in the visualization service. Note this visualization is only for the operator's benefit, and to enable interpreting "goal-states" sent by Monty; it does not affect the measured locations or displacements within Monty as the probe moves.
 
-- Run the Monty experiment `python run.py -e probe_triggered_data_collection_for_learning` (or `_for_inference`, depending on how many data samples you want to collect, and what "policy" the human operator is planning on using - see `ultrasound_experiments.py` for details)
+- Run the Monty experiment `python run.py experiment=probe_triggered_data_collection_for_learning` (or `experiment=probe_triggered_data_collection_for_inference`, depending on how many data samples you want to collect, and what "policy" the human operator is planning on using - see `conf/experiment/probe_triggered_data_collection_for_learning.yaml` for details)
 - Enter the name of the object when prompted in the terminal; this will be used for saving all collected images
 - In the iPad app, click `Start Imaging`
 - Collect data by moving the probe and capturing more images!

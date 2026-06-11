@@ -1,0 +1,34 @@
+# @package _global_
+
+defaults:
+  - /monty: evidencegraph_ultrasound
+  - /monty/motor_system_config: ultrasound_informed
+  - /monty/learning_module: ultrasound_evidence
+  - /monty/sensor_module: ultrasound_patch
+  - /monty/connectivity: 1lm_1sm_ultrasound
+  - /environment: ultrasound_json_dense
+  - /env_interface: eval_ultrasound_json
+  - /logging: ultrasound_benchmark_eval
+
+experiment:
+  _target_: ${monty.class:custom_classes.experiment.UltrasoundExperiment}
+  config:
+    show_sensor_output: false
+    do_eval: true
+    max_train_steps: 1000
+    max_eval_steps: ${constants.num_training_samples}
+    max_total_steps: 6000
+    n_train_epochs: 1
+    n_eval_epochs: 1
+    model_name_or_path: ${constants.model_path_tbp_robot_lab}
+    min_lms_match: 1
+    seed: 42
+    supervised_lm_ids: []
+    plotting_config:
+      enabled: false
+    logging:
+      run_name: json_dataset_ultrasound_infer_sim2real__dense_inference
+    monty_config:
+      monty_args:
+        min_eval_steps: 199
+        num_exploratory_steps: ${constants.num_training_samples}

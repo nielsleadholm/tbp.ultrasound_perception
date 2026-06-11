@@ -1,0 +1,10 @@
+# @package _global_
+
+defaults:
+  - json_dataset_ultrasound_dense_learning
+  - override /environment: ultrasound_json_sparse
+
+experiment:
+  config:
+    logging:
+      run_name: json_dataset_ultrasound_sparse_learning

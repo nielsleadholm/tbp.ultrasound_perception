@@ -1,0 +1,8 @@
+# @package experiment.config.monty_config.motor_system_config.policy_selector.policy
+
+_target_: ${monty.class:custom_classes.motor_policy.UltrasoundMotorPolicy}
+agent_id: agent_id_0
+use_goal_driven_actions: false
+action_sampler:
+  _target_: tbp.monty.frameworks.actions.action_samplers.ConstantSampler
+  actions: []

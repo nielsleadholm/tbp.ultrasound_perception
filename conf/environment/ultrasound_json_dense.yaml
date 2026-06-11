@@ -1,0 +1,8 @@
+# @package experiment.config.environment
+
+env_init_func: ${monty.class:custom_classes.environment.JSONDatasetUltrasoundEnvironment}
+env_init_args:
+  data_path: ${path.expanduser:${oc.env:MONTY_DATA}/ultrasound_robot_lab_dense/}
+transform:
+  - _target_: ${monty.class:custom_classes.transforms.UltrasoundPatchTransform}
+    patch_size: 256

@@ -1,0 +1,7 @@
+# @package experiment.config.environment
+
+defaults:
+  - /environment: habitat_numentalab_surf_agent
+
+env_init_args:
+  data_path: ${path.expanduser:${oc.env:MONTY_DATA}/tbp_robot_lab}

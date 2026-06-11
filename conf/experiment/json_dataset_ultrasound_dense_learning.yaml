@@ -1,0 +1,30 @@
+# @package _global_
+
+defaults:
+  - /monty: graph_ultrasound_learning
+  - /monty/motor_system_config: ultrasound_informed
+  - /monty/learning_module: ultrasound_displacement
+  - /monty/sensor_module: ultrasound_patch
+  - /monty/connectivity: 1lm_1sm_ultrasound
+  - /environment: ultrasound_json_dense
+  - /env_interface: train_ultrasound_json
+  - /logging: ultrasound_pretrain
+
+experiment:
+  _target_: ${monty.class:custom_classes.experiment.MontyUltrasoundSupervisedObjectPretrainingExperiment}
+  config:
+    show_sensor_output: false
+    do_train: true
+    max_train_steps: ${constants.num_training_samples}
+    max_eval_steps: 500
+    max_total_steps: 6000
+    n_train_epochs: 1
+    n_eval_epochs: 0
+    model_name_or_path: ''
+    min_lms_match: 1
+    seed: 42
+    supervised_lm_ids: all
+    plotting_config:
+      enabled: false
+    logging:
+      run_name: json_dataset_ultrasound_dense_learning

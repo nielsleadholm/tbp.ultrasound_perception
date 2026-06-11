@@ -26,7 +26,7 @@ channels:
   - thousandbrainsproject
 
 dependencies:
-  - thousandbrainsproject::tbp.monty==0.6.0
+  - thousandbrainsproject::tbp.monty
   - pip
   - pip:
     - -e .[dev]

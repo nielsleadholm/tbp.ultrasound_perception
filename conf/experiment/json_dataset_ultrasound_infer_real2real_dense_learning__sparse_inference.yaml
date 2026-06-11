@@ -1,0 +1,10 @@
+# @package _global_
+
+defaults:
+  - json_dataset_ultrasound_infer_sim2real__sparse_inference
+
+experiment:
+  config:
+    model_name_or_path: ${constants.model_path_ultrasound_dense_learning}
+    logging:
+      run_name: json_dataset_ultrasound_infer_real2real_dense_learning__sparse_inference

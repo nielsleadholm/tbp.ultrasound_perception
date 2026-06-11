@@ -1,0 +1,6 @@
+# @package experiment.config
+
+do_eval: true
+eval_env_interface_class: ${monty.class:custom_classes.interface.UltrasoundJSONInterface}
+eval_env_interface_args:
+  scenes: ${constants.ultrasound_scenes}

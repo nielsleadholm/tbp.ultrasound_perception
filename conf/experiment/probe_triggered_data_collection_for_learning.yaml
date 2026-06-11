@@ -1,0 +1,39 @@
+# @package _global_
+
+defaults:
+  - /monty: evidencegraph_ultrasound_goal_server
+  - /monty/motor_system_config: ultrasound_informed_gsg
+  - /monty/learning_module: ultrasound_evidence_gsg
+  - /monty/sensor_module: ultrasound_patch
+  - /monty/connectivity: 1lm_1sm_ultrasound
+  - /environment: ultrasound_probe_triggered
+  - /env_interface: eval_ultrasound_probe_triggered
+  - /logging: ultrasound_probe_triggered
+
+experiment:
+  _target_: ${monty.class:custom_classes.experiment.UltrasoundExperiment}
+  config:
+    show_sensor_output: false
+    do_eval: true
+    max_train_steps: 1000
+    max_eval_steps: ${constants.num_training_samples}
+    max_total_steps: 6001
+    n_train_epochs: 1
+    n_eval_epochs: 1
+    model_name_or_path: ${constants.model_path_tbp_robot_lab}
+    min_lms_match: 1
+    seed: 42
+    supervised_lm_ids: []
+    plotting_config:
+      enabled: true
+      save_path: ${path.expanduser:${oc.env:MONTY_DATA}/ultrasound_data_collection/plots}
+      plot_frequency: 1
+      plot_patch_features: true
+      show_hypothesis_space: true
+    logging:
+      run_name: probe_triggered_data_collection_for_learning
+    monty_config:
+      monty_args:
+        min_eval_steps: ${constants.num_training_samples}
+        num_exploratory_steps: 201
+        max_total_steps: 201

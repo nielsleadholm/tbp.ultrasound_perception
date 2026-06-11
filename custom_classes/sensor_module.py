@@ -9,16 +9,41 @@
 
 """Sensor module for ultrasound data processing."""
 
+from __future__ import annotations
+
+from typing import Any
+
 import numpy as np
 import quaternion as qt
 from scipy.optimize import least_squares
-from tbp.monty.frameworks.models.monty_base import SensorModuleBase
-from tbp.monty.frameworks.models.states import State
+
+from tbp.monty.cmp import Message
+from tbp.monty.context import RuntimeContext
+from tbp.monty.frameworks.models.abstract_monty_classes import SensorObservation
+from tbp.monty.frameworks.models.motor_system_state import AgentState, SensorState
+from tbp.monty.frameworks.sensors import SensorID
+from tbp.monty.memento import Memento
 
 
-class UltrasoundSM(SensorModuleBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class UltrasoundSM:
+    def __init__(self, sensor_module_id: str = "patch", **kwargs):
+        del kwargs
+        self.sensor_module_id = sensor_module_id
+        self.is_exploring = False
+        self.state: SensorState | None = None
+        self.plotting_data: dict[str, Any] = {
+            "column_points": [],
+            "center_edge": None,
+            "fitted_circle": None,
+            "point_normal": None,
+            "curvature": None,
+            "mean_depth": 0.0,
+            "observed_locations": [],
+            "normal_rel_world": [],
+        }
+
+    def reset(self) -> None:
+        self.is_exploring = False
         self.plotting_data = {
             "column_points": [],
             "center_edge": None,
@@ -30,8 +55,23 @@ class UltrasoundSM(SensorModuleBase):
             "normal_rel_world": [],
         }
 
-    def step(self, data):
-        # Calculate patch pose in world coordinates
+    def state_dict(self) -> Memento:
+        return {}
+
+    def update_state(self, agent: AgentState) -> None:
+        sensor = agent.sensors[SensorID(self.sensor_module_id)]
+        self.state = SensorState(
+            position=agent.position,
+            rotation=agent.rotation * sensor.rotation,
+        )
+
+    def step(
+        self,
+        ctx: RuntimeContext,  # noqa: ARG002
+        observation: SensorObservation,
+        motor_only_step: bool = False,  # noqa: ARG002
+    ) -> Message:
+        data = observation
         tracker_position, probe_position, tracker_orientation, probe_orientation = (
             self.get_tracker_position_and_orientation(
                 data["proprioceptive_state_agent"], data["proprioceptive_state_patch"]
@@ -76,7 +116,7 @@ class UltrasoundSM(SensorModuleBase):
         self.plotting_data["point_normal"] = normal_rel_patch
         self.plotting_data["curvature"] = curvature
 
-        CMP_output = State(
+        return Message(
             location=patch_world_location,
             morphological_features={
                 "pose_vectors": patch_world_orientation,
@@ -92,7 +132,6 @@ class UltrasoundSM(SensorModuleBase):
             sender_id=self.sensor_module_id,
             sender_type="SM",
         )
-        return CMP_output
 
     def get_depth_from_pixel_location(
         self, full_image_height, pixel_depth_in_image, max_depth=7
@@ -221,13 +260,6 @@ class UltrasoundSM(SensorModuleBase):
                 proprioceptive_state_probe["rotation"][3],
             )
         return tracker_position, probe_position, tracker_orientation, probe_orientation
-
-    def update_state(self, state):
-        """Currently pass state info to step function.
-
-        TODO: should probably better do this here.
-        """
-        pass
 
     def extract_patch_pose_feat(self, patch):
         """Extract patch pose features including curvature and surface normal from a 256x256 grayscale image.

@@ -1,0 +1,18 @@
+defaults:
+  - _self_
+  - constants: defaults
+  - experiment: ??
+
+hydra:
+  searchpath:
+    - pkg://tbp.monty.conf
+
+experiment:
+  config:
+    do_eval: false
+    do_train: false
+
+episodes: all
+num_parallel: 16
+print_cfg: false
+quiet_habitat_logs: true

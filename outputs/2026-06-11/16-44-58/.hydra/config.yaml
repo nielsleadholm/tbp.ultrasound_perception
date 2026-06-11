@@ -1,0 +1,117 @@
+experiment:
+  config:
+    do_eval: true
+    do_train: false
+    monty_config:
+      monty_class: ${monty.class:tbp.monty.frameworks.models.evidence_matching.model.MontyForEvidenceGraphMatching}
+      monty_args:
+        num_exploratory_steps: ${constants.num_eval_samples}
+        min_eval_steps: ${constants.min_eval_steps}
+        min_train_steps: 3
+        max_total_steps: 6000
+      motor_system_config:
+        policy_selector:
+          policy:
+            _target_: ${monty.class:custom_classes.motor_policy.UltrasoundMotorPolicy}
+            agent_id: agent_id_0
+            use_goal_driven_actions: false
+            action_sampler:
+              _target_: tbp.monty.frameworks.actions.action_samplers.ConstantSampler
+              actions: []
+          _target_: tbp.monty.frameworks.models.motor_policy_selectors.SinglePolicySelector
+        _target_: tbp.monty.frameworks.models.motor_system.MotorSystem
+      learning_modules:
+        learning_module_0:
+          hypotheses_updater_class: ${monty.class:tbp.monty.frameworks.models.evidence_matching.burst_sampling.BurstSamplingHypothesesUpdater}
+          hypotheses_updater_args:
+            max_nneighbors: 10
+          _target_: tbp.monty.frameworks.models.evidence_matching.learning_module.EvidenceGraphLM
+          tolerances:
+            patch:
+              pose_vectors: ${np.array:[0.87266463, 0.87266463, 0.87266463]}
+          max_match_distance: 0.01
+          x_percent_threshold: 20
+          evidence_threshold_config: 80%
+          max_graph_size: 0.3
+          num_model_voxels_per_dim: 100
+          use_multithreading: false
+      sensor_modules:
+        sensor_module_0:
+          _target_: ${monty.class:custom_classes.sensor_module.UltrasoundSM}
+          sensor_module_id: patch
+      sm_to_agent_dict:
+        patch: agent_id_0
+      sm_to_lm_matrix:
+      - - 0
+      lm_to_lm_matrix: null
+      lm_to_lm_vote_matrix: null
+    environment:
+      env_init_func: ${monty.class:custom_classes.environment.JSONDatasetUltrasoundEnvironment}
+      env_init_args:
+        data_path: ${path.expanduser:${oc.env:MONTY_DATA}/ultrasound_robot_lab_sparse/}
+      transform:
+      - _target_: ${monty.class:custom_classes.transforms.UltrasoundPatchTransform}
+        patch_size: 256
+    eval_env_interface_class: ${monty.class:custom_classes.interface.UltrasoundJSONInterface}
+    eval_env_interface_args:
+      scenes: ${constants.ultrasound_scenes}
+    logging:
+      monty_log_level: BASIC
+      monty_handlers:
+      - ${monty.class:tbp.monty.frameworks.loggers.monty_handlers.BasicCSVStatsHandler}
+      wandb_handlers: []
+      python_log_level: DEBUG
+      python_log_to_file: true
+      python_log_to_stderr: true
+      output_dir: ${path.expanduser:${oc.env:MONTY_LOGS}/projects/evidence_eval_runs}
+      resume_wandb_run: false
+      wandb_id:
+        _target_: wandb.util.generate_id
+      wandb_group: benchmark_experiments
+      run_name: json_dataset_ultrasound_infer_real2real_dense_learning__sparse_inference
+    show_sensor_output: false
+    max_train_steps: 1000
+    max_eval_steps: ${constants.num_eval_samples}
+    max_total_steps: 6000
+    n_train_epochs: 1
+    n_eval_epochs: 1
+    model_name_or_path: ${constants.model_path_ultrasound_dense_learning}
+    min_lms_match: 1
+    seed: 42
+    supervised_lm_ids: []
+    plotting_config:
+      enabled: false
+  _target_: ${monty.class:custom_classes.experiment.UltrasoundExperiment}
+episodes: all
+num_parallel: 16
+print_cfg: false
+quiet_habitat_logs: true
+constants:
+  min_eval_steps: 20
+  num_eval_samples: 50
+  num_training_samples: 200
+  ultrasound_pretrain_dir: ${path.expanduser:${oc.env:MONTY_MODELS}/ultrasound_robot_lab_v1}
+  model_path_tbp_robot_lab: ${constants.ultrasound_pretrain_dir}/surf_agent_1lm_tbp_robot_lab/pretrained/
+  model_path_ultrasound_dense_learning: ${constants.ultrasound_pretrain_dir}/json_dataset_ultrasound_dense_learning/pretrained/
+  tbp_robot_lab_objects:
+  - numenta_mug
+  - montys_brain
+  - montys_heart
+  - ramen_pack
+  - hot_sauce
+  - harissa_oil
+  - tomato_soup_can
+  - mustard_bottle
+  - tuna_fish_can
+  - potted_meat_can
+  ultrasound_scenes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9

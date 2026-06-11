@@ -1,0 +1,31 @@
+min_eval_steps: 20
+num_eval_samples: 50
+num_training_samples: 200
+
+ultrasound_pretrain_dir: ${path.expanduser:${oc.env:MONTY_MODELS}/ultrasound_robot_lab_v1}
+model_path_tbp_robot_lab: ${constants.ultrasound_pretrain_dir}/surf_agent_1lm_tbp_robot_lab/pretrained/
+model_path_ultrasound_dense_learning: ${constants.ultrasound_pretrain_dir}/json_dataset_ultrasound_dense_learning/pretrained/
+
+tbp_robot_lab_objects:
+  - numenta_mug
+  - montys_brain
+  - montys_heart
+  - ramen_pack
+  - hot_sauce
+  - harissa_oil
+  - tomato_soup_can
+  - mustard_bottle
+  - tuna_fish_can
+  - potted_meat_can
+
+ultrasound_scenes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
