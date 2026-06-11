@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright 2025 Thousand Brains Project
 #
 # Copyright may exist in Contributors' modifications
@@ -7,148 +8,94 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-"""Entrypoint for running an experiment."""
+"""Hydra entrypoint for running ultrasound perception experiments.
+
+Run an experiment with, e.g.::
+
+    python run.py experiment=ultrasound_sim2real_sparse_inference
+
+Experiment configs live under ``conf/experiment``. Base building blocks (motor
+systems, learning modules, etc.) are composed from both this project's ``conf`` tree
+and ``tbp.monty``'s ``conf`` tree (made available via the ``MontySearchPathPlugin``).
+"""
 
 from tbp.monty.frameworks.run_env import setup_env
 
 setup_env()
 
-from configs import CONFIGS  # noqa: E402
+import logging  # noqa: E402
+import os  # noqa: E402
+import time  # noqa: E402
+from pathlib import Path  # noqa: E402
 
-
-import copy
-import logging
-import os
-import pprint
-import time
-
-from tbp.monty.frameworks.config_utils.cmd_parser import create_cmd_parser
-from tbp.monty.frameworks.utils.dataclass_utils import config_to_dict
+import hydra  # noqa: E402
+from omegaconf import DictConfig, OmegaConf  # noqa: E402
+from tbp.monty.hydra import register_resolvers  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
 
-def merge_args(config, cmd_args=None):
-    """Override experiment "config" parameters with command line args.
-
-    Returns:
-        Updated config with command line args.
-    """
-    if not cmd_args:
-        return config
-
-    exp_config = copy.deepcopy(config)
-    exp_config.update(cmd_args.__dict__)
-    del exp_config["experiments"]
-    return exp_config
-
-
-def print_config(config):
-    """Print config with nice formatting if config_args.print_config is True."""
+def print_config(config: DictConfig) -> None:
+    """Print config with nice formatting."""
     print("\n\n")
     print("Printing config below")
     print("-" * 100)
-    print(pprint.pformat(config))
+    print(OmegaConf.to_yaml(config))
     print("-" * 100)
 
 
-def run(config):
-    with config["experiment_class"](config) as exp:
-        # TODO: Later will want to evaluate every x episodes or epochs
-        # this could probably be solved with just setting the logging freqency
-        # Since each trainng loop already does everything that eval does.
-        if exp.do_train:
-            print("---------training---------")
-            exp.train()
+def output_dir_from_run_name(config: DictConfig) -> Path:
+    """Build the run-specific output directory (output_dir / run_name).
 
-        if exp.do_eval:
-            print("---------evaluating---------")
-            exp.evaluate()
+    For probe-triggered data collection, prompt for the object name and nest the
+    output (and the dataset save path) under it, mirroring the old semi-manual
+    collection pipeline.
 
-
-def main(all_configs, experiments=None):
-    """Use this as "main" function when running monty experiments.
-
-    A typical project `run.py` should look like this::
-
-        # Load all experiment configurations from local project
-        from experiments import CONFIGS
-        from tbp.monty.frameworks.run import main
-
-        if __name__ == "__main__":
-            main(all_configs=CONFIGS)
-
-    Args:
-        all_configs: Dict containing all available experiment configurations.
-            Usually each project would have its own list of experiment
-            configurations
-        experiments: Optional list of experiments to run, used to bypass the
-            command line args
+    Returns:
+        Path to the run-specific output directory.
     """
-    cmd_args = None
-    if not experiments:
-        cmd_parser = create_cmd_parser(experiments=list(all_configs.keys()))
-        cmd_args = cmd_parser.parse_args()
-        experiments = cmd_args.experiments
+    logging_config = config.experiment.config.logging
+    output_dir = Path(logging_config.output_dir) / logging_config.run_name
 
-        if cmd_args.quiet_habitat_logs:
-            os.environ["MAGNUM_LOG"] = "quiet"
-            os.environ["HABITAT_SIM_LOG"] = "quiet"
+    if "probe_triggered" in str(logging_config.run_name):
+        prompt = "Enter the name of the object for this experiment: "
+        object_name = input(prompt).strip()
+        if not object_name:
+            object_name = "unknown_object"
+        object_name = "".join(
+            c for c in object_name if c.isalnum() or c in (" ", "-", "_")
+        ).rstrip()
+        object_name = object_name.replace(" ", "_")
+        output_dir = output_dir / object_name
+        config.experiment.config.environment.env_init_args.save_path = str(
+            output_dir / "observations"
+        )
 
-    for experiment in experiments:
-        exp = all_configs[experiment]
-        exp_config = merge_args(exp, cmd_args)  # TODO: is this really even necessary?
-        exp_config = config_to_dict(exp_config)
+    output_dir.mkdir(exist_ok=True, parents=True)
+    return output_dir
 
-        # Update run_name and output dir with experiment name
-        # NOTE: wandb args are further processed in monty_experiment
-        if not exp_config["logging_config"]["run_name"]:
-            exp_config["logging_config"]["run_name"] = experiment
 
-        if "probe_triggered" in experiment:
-            # Prompt user for object name to create subdirectory
-            object_name = input(
-                "Enter the name of the object for this experiment: "
-            ).strip()
-            if not object_name:
-                object_name = "unknown_object"
+@hydra.main(config_path="conf", config_name="experiment", version_base=None)
+def main(cfg: DictConfig):
+    if cfg.quiet_habitat_logs:
+        os.environ["MAGNUM_LOG"] = "quiet"
+        os.environ["HABITAT_SIM_LOG"] = "quiet"
 
-            # Sanitize object name for use in directory path
-            object_name = "".join(
-                c for c in object_name if c.isalnum() or c in (" ", "-", "_")
-            ).rstrip()
-            object_name = object_name.replace(" ", "_")
+    register_resolvers()
+    print_config(cfg)
 
-            exp_config["logging_config"]["output_dir"] = os.path.join(
-                exp_config["logging_config"]["output_dir"],
-                exp_config["logging_config"]["run_name"],
-                object_name,
-            )
-            # Update the save_path for the dataset to use output_dir
-            exp_config["dataset_args"]["env_init_args"]["save_path"] = os.path.join(
-                exp_config["logging_config"]["output_dir"], "observations"
-            )
+    cfg.experiment.config.logging.output_dir = str(output_dir_from_run_name(cfg))
 
-        else:
-            exp_config["logging_config"]["output_dir"] = os.path.join(
-                exp_config["logging_config"]["output_dir"],
-                exp_config["logging_config"]["run_name"],
-            )
+    if cfg.print_cfg:
+        return
 
-        # If we are not running in parallel, this should always be False
-        exp_config["logging_config"]["log_parallel_wandb"] = False
-        print_config(exp_config)
+    experiment = hydra.utils.instantiate(cfg.experiment)
+    start_time = time.time()
+    with experiment:
+        experiment.run()
 
-        # Print config without running experiment
-        if cmd_args is not None:
-            if cmd_args.print_config:
-                continue
-
-        os.makedirs(exp_config["logging_config"]["output_dir"], exist_ok=True)
-        start_time = time.time()
-        run(exp_config)
-        logger.info(f"Done running {experiment} in {time.time() - start_time} seconds")
+    logger.info(f"Done running {experiment} in {time.time() - start_time} seconds")
 
 
 if __name__ == "__main__":
-    main(all_configs=CONFIGS)
+    main()

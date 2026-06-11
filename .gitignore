@@ -73,6 +73,10 @@ venv.bak/
 .pytest_cache/
 .ruff_cache/
 
+# Hydra run outputs
+outputs/
+multirun/
+
 
 # xcode
 scripts/ipad_app/ButterflyImagingKitExample.xcodeproj/project.xcworkspace/xcuserdata/wwarren.xcuserdatad/UserInterfaceState.xcuserstate

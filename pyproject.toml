@@ -73,7 +73,8 @@ exclude = ["venv", "\\.venv", "\\.direnv", "\\.git", "setup\\.py"]
 experimental_namespace_package = true # recognize `tbp.` prefixed packages as a namespace package
 ignore = ["DEP002"]
 known_first_party = [
-    "configs", # experiment configurations
+    "custom_classes", # custom Monty classes for ultrasound perception
+    "hydra_plugins", # Hydra search-path plugin exposing this project's conf tree
 ]
 
 

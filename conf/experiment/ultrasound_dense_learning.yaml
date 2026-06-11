@@ -1,0 +1,33 @@
+# @package _global_
+
+# Learn object models from a densely-sampled offline ultrasound dataset using a
+# DisplacementGraphLM. The learned models can be inspected to sanity-check dataset
+# quality, and used for real-to-real inference.
+
+defaults:
+  - /monty: ultrasound_graph
+  - /monty/motor_system_config: ultrasound
+  - /monty/learning_module: ultrasound_displacement_1lm
+  - /monty/sensor_module: ultrasound
+  - /monty/connectivity: ultrasound_1lm_1sm
+  - /environment: ultrasound_robot_lab_dense
+  - /env_interface: ultrasound_train
+  - /env_interface/transform: none
+  - /logging: silent_info_train
+
+experiment:
+  _target_: custom_classes.experiment.UltrasoundPretrainingExperiment
+  config:
+    show_sensor_output: false
+    max_train_steps: 200
+    max_eval_steps: 200
+    max_total_steps: 200
+    n_train_epochs: 1
+    n_eval_epochs: 1
+    model_name_or_path: ''
+    min_lms_match: 1
+    seed: 42
+    supervised_lm_ids: all
+    logging:
+      run_name: json_dataset_ultrasound_dense_learning
+      output_dir: ${path.expanduser:${oc.env:MONTY_MODELS}/ultrasound_robot_lab_v1}

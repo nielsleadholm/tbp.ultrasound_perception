@@ -1,0 +1,44 @@
+# @package _global_
+
+# Interactive, probe-triggered data collection aimed at gathering a sparse set of
+# observations for offline inference. The operator should rapidly scan distinguishing
+# features of the object. Proposed goal states are published to the goal-state server
+# for 3D visualization. Each streamed observation is saved to disk.
+
+defaults:
+  - /monty: ultrasound_goal_server
+  - /monty/motor_system_config: ultrasound
+  - /monty/learning_module: ultrasound_evidence_1lm_gsg
+  - /monty/sensor_module: ultrasound
+  - /monty/connectivity: ultrasound_1lm_1sm
+  - /environment: ultrasound_probe_triggered
+  - /env_interface: ultrasound_eval
+  - /env_interface/transform: none
+  - /logging: basic_info_evidence_eval_runs
+
+experiment:
+  _target_: custom_classes.experiment.UltrasoundInferenceExperiment
+  config:
+    show_sensor_output: false
+    max_train_steps: 1000
+    max_eval_steps: 50
+    max_total_steps: 4000
+    n_train_epochs: 1
+    n_eval_epochs: 1
+    model_name_or_path: ${path.expanduser:${oc.env:MONTY_MODELS}/ultrasound_robot_lab_v1/surf_agent_1lm_tbp_robot_lab/pretrained/}
+    min_lms_match: 1
+    seed: 42
+    supervised_lm_ids: []
+    monty_config:
+      monty_args:
+        min_eval_steps: 50
+        num_exploratory_steps: 51
+    plotting_config:
+      enabled: true
+      save_path: ${path.expanduser:${oc.env:MONTY_DATA}/ultrasound_data_collection/plots}
+      plot_frequency: 1
+      plot_patch_features: true
+      show_hypothesis_space: true
+    logging:
+      run_name: probe_triggered_data_collection_for_inference
+      output_dir: ${path.expanduser:${oc.env:MONTY_LOGS}/projects/ultrasound}

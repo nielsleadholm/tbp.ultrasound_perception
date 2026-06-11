@@ -1,0 +1,8 @@
+# @package experiment.config.environment
+
+env_init_args:
+  patch_size: 256
+  image_listen_port: 3000
+  save_path: ${path.expanduser:${oc.env:MONTY_DATA}/ultrasound_data_collection/}
+  vive_url: ${oc.env:VIVE_SERVER_URL,http://localhost:3001}/pose
+env_init_func: ${monty.class:custom_classes.probe_triggered_environment.ProbeTriggeredUltrasoundEnvironment}
