@@ -67,7 +67,7 @@ class UltrasoundSM(SensorModule):
     # ------------------------------------------------------------------
     # SensorModule interface
     # ------------------------------------------------------------------
-    def pre_episode(self) -> None:
+    def reset(self) -> None:
         self.is_exploring = False
         self.processed_obs = []
         self.raw_observations = []
