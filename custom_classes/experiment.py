@@ -58,8 +58,12 @@ class UltrasoundInferenceExperiment(MontyObjectRecognitionExperiment):
             try:
                 observations, proprioceptive_state = self.env_interface.step(actions)
             except StopIteration:
-                # Offline dataset exhausted for this object.
-                self.model.set_is_done()
+                # Offline dataset exhausted for this object before a definitive match.
+                # Treat this exactly like reaching ``max_eval_steps``: set any
+                # not-yet-converged LM to ``time_out`` (and mark the model done) so the
+                # logger evaluates the most likely hypothesis as ``correct_mlh`` /
+                # ``confused_mlh`` rather than leaving the performance blank.
+                self.model.deal_with_time_out()
                 return step
 
             if self.model.check_reached_max_matching_steps(self.max_steps):
@@ -81,7 +85,7 @@ class UltrasoundInferenceExperiment(MontyObjectRecognitionExperiment):
                 else:
                     actions = self.model.step(ctx, observations, proprioceptive_state)
             except StopIteration:
-                self.model.set_is_done()
+                self.model.deal_with_time_out()
                 return step
 
             self._maybe_plot(step, observations)
